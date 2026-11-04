@@ -14,10 +14,6 @@ import {
     actualizarErrorPrivacidad
 } from "./interfaz.js";
 
-import {
-    seedInitialUsers,
-    saveUserToStorage
-} from "./storage_InicioSesion.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -176,49 +172,62 @@ document.addEventListener("DOMContentLoaded", () => {
             apellido: apellido.trim(),
             telefono: telefono.trim(),
             correo: correo.trim().toLowerCase(),
-            contrasena: contrasena
+            passwordHash: contrasena
         };
 
         // 5) Guardar (saveUserToStorage devuelve false si el correo ya existe)
-        let guardado;
         try {
-            await seedInitialUsers();
-            guardado = await saveUserToStorage(usuario);
+            const response = await fetch("http://localhost:8080/sketchcoffee/usuarios/registro", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(usuario)
+            });
+
+            // 6) Evaluar las respuestas del servidor Java
+            if (response.status === 201 || response.status === 200) {
+                // Éxito
+                mostrarAlerta(
+                    "Registro completado correctamente. ¡Bienvenido a Sketch & Coffee!",
+                    "success"
+                );
+
+                // Limpiar formulario y errores visuales
+                formulario.reset();
+                [
+                    errorNombre, errorApellido, errorTelefono, errorCorreo,
+                    errorContrasena, errorConfirmar, errorPrivacidad
+                ].forEach((el) => (el.textContent = ""));
+
+                [iptNombre, iptApellido, iptTelefono, iptCorreo, iptContrasena, iptConfirmar]
+                    .forEach((el) => el.setAttribute("aria-invalid", "false"));
+
+                // Redirigir a inicio de sesión después de 2 segundos
+                setTimeout(() => {
+                    console.log("Redirigiendo a página de inicio de sesión...");
+                    window.location.href = "inicio-sesion.html";
+                }, 2000);
+
+            } else if (response.status === 409) {
+                // Conflicto: El correo ya existe
+                mostrarAlerta(
+                    "Este correo ya está registrado en el sistema. Intenta con otro o inicia sesión.",
+                    "warning"
+                );
+            } else if (response.status === 400) {
+                // Solicitud errónea
+                mostrarAlerta(
+                    "Los datos enviados no son válidos. Revisa la información.",
+                    "danger"
+                );
+            } else {
+                mostrarAlerta("Ocurrió un error inesperado en el servidor.", "danger");
+            }
+
         } catch (error) {
-            console.error("No se pudo guardar el usuario de forma segura:", error);
-            mostrarAlerta("No se pudo guardar el registro en este navegador. Inténtalo de nuevo.", "danger");
-            return;
+            console.error("No se pudo conectar con el servidor backend:", error);
+            mostrarAlerta("No se pudo establecer conexión con el servidor. Verifica que tu backend esté activo.", "danger");
         }
-
-        if (guardado === false) {
-            mostrarAlerta(
-                "Este correo ya está registrado. Intenta con otro o inicia sesión.",
-                "warning"
-            );
-            return;
-        }
-
-        // 6) Éxito
-        mostrarAlerta(
-            "Registro completado correctamente. ¡Bienvenido a Sketch & Coffee!",
-            "success"
-        );
-
-        // 7) Limpiar formulario y errores
-        formulario.reset();
-        [
-            errorNombre, errorApellido, errorTelefono, errorCorreo,
-            errorContrasena, errorConfirmar, errorPrivacidad
-        ].forEach((el) => (el.textContent = ""));
-
-        // 8) Reset de aria-invalid
-        [iptNombre, iptApellido, iptTelefono, iptCorreo, iptContrasena, iptConfirmar]
-            .forEach((el) => el.setAttribute("aria-invalid", "false"));
-
-        // 9) Redirigir con un pequeño retraso (2 segundos) para que la alerta sea visible y accesible
-        setTimeout(() => {
-            console.log("Redirigiendo a página de inicio de sesión...");
-            window.location.href = "inicio-sesion.html";
-        }, 2000); // 2000 milisegundos = 2 segundos
     });
 });
