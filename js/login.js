@@ -1,8 +1,3 @@
-import {
-    authenticateStoredUser,
-    seedInitialUsers
-} from './storage_InicioSesion.js';
-
 document.addEventListener("DOMContentLoaded", async () => {
 
     // Selección de elementos del DOM
@@ -17,20 +12,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!formularioLogin) return;
 
-    try {
-        await seedInitialUsers();
-    } catch (error) {
-        console.error("No se pudo preparar el almacenamiento seguro de usuarios:", error);
-        if (alertaGeneral) {
-            alertaGeneral.className = "alert alert-danger";
-            alertaGeneral.textContent = "No se pudo preparar el inicio de sesión en este navegador.";
-            alertaGeneral.classList.remove("d-none");
-        }
-        return;
-    }
-
     /*=========================================================
-        RECUPERACIÓN RÁPIDA DE CONTRASEÑA (Opción 3)
+              RECUPERACIÓN RÁPIDA DE CONTRASEÑA 
     =========================================================*/
     if (btnOlvidaste) {
         btnOlvidaste.addEventListener("click", (e) => {
@@ -42,53 +25,45 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const usuarioVal = campoUsuario.value.trim();
 
-            // Si el campo de correo está vacío
             if (usuarioVal === "") {
                 mostrarErrorCampo(
                     campoUsuario,
                     errorUsuario,
                     "Ingresa tu correo electrónico para enviarte las instrucciones de recuperación."
-                );
+                );// Marcar el campo como inválido y mostrar mensaje de error
                 campoUsuario.focus();
                 return;
-            }//if
+            }//if usuarioVal === ""
 
-            // Validación rápida de formato de correo
             if (!usuarioVal.includes("@") || !usuarioVal.includes(".")) {
                 mostrarErrorCampo(
                     campoUsuario,
                     errorUsuario,
                     "Ingresa un correo electrónico válido."
-
-                );//mostrarErrorCampo
+                );// mostrar mensaje de error si el correo no es válido
                 campoUsuario.focus();
                 return;
+            }//if el correo no tiene formato válido
 
-            }// if !
-
-            // Si ingresó un correo válido, mostramos la confirmación verde de éxito
             if (alertaGeneral) {
                 alertaGeneral.className = "alert alert-success";
                 alertaGeneral.textContent = `Se han enviado las instrucciones de recuperación al correo: ${usuarioVal}`;
                 alertaGeneral.classList.remove("d-none");
                 alertaGeneral.setAttribute("tabindex", "-1");
                 alertaGeneral.focus();
+            }// Mostrar mensaje de éxito en la zona de alerta general
 
-            }//if
-
-            // Notificación accesible para lectores de pantalla
             const zonaPolite = document.getElementById("notificacion-polite");
             if (zonaPolite) {
                 zonaPolite.textContent = `Enviando correo de recuperación a ${usuarioVal}`;
+            }// Actualizar la zona de notificación para lectores de pantalla
+        });//btnOlvidaste.addEventListener
+    }//if btnOlvidaste
 
-            }//if
-        });//addEventListener
-
-    }// btnolvidaste
 
     // Captura del evento submit evitando la recarga de página
     formularioLogin.addEventListener("submit", async (e) => {
-        e.preventDefault(); // Evita recarga por defecto
+        e.preventDefault(); 
 
         // Limpiar estados previos
         limpiarEstadoValidacion(campoUsuario, errorUsuario);
@@ -100,12 +75,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         let esValido = true;
 
-        // Validación de campos vacíos en cliente y actualización de estados
+        // Validación de campos vacíos en cliente
         if (usuarioVal === "") {
             mostrarErrorCampo(campoUsuario, errorUsuario, "El correo o nombre de usuario es obligatorio.");
             esValido = false;
         } else if (usuarioVal.includes("@") && !usuarioVal.includes(".")) {
-            // Validación opcional rápida si ingresan un correo incompleto
             mostrarErrorCampo(campoUsuario, errorUsuario, "Ingresa un correo electrónico válido.");
             esValido = false;
         } else {
@@ -123,61 +97,75 @@ document.addEventListener("DOMContentLoaded", async () => {
             marcarCampoValido(campoContrasena, errorContrasena);
         }//else
 
-        /*=========================================================
-            GESTIÓN PROGRAMÁTICA DEL FOCO (Si hay errores)
-        =========================================================*/
+
+        // Gestión de foco si hay errores
         if (!esValido) {
             const primerCampoInvalido = formularioLogin.querySelector(".is-invalid");
             if (primerCampoInvalido) {
                 primerCampoInvalido.focus();
-
-            }//if primerCampo
-            return; // Detiene la ejecución
-
+            }//if primerCampoInvalido
+            return; 
         }//if !esValido
 
-        // Si la estructura DOM y accesibilidad están listas y válidas:
-        if (esValido) {
 
-            /*=========================================================
-                AUTENTICACIÓN CONTRA LOCALSTORAGE Y SESIÓN
-            =========================================================*/
-            let usuarioEncontrado;
-            try {
-                usuarioEncontrado = await authenticateStoredUser(usuarioVal, contrasenaVal);
-            } catch (error) {
-                console.error("No se pudo verificar la contraseña:", error);
-                if (alertaGeneral) {
-                    alertaGeneral.className = "alert alert-danger";
-                    alertaGeneral.textContent = "No se pudo verificar la contraseña en este navegador.";
-                    alertaGeneral.classList.remove("d-none");
-                }
-                return;
-            }
 
-            if (!usuarioEncontrado) {
+        /*=========================================================
+            AUTENTICACIÓN MEDIANTE FETCH CONTRA EL BACKEND
+        =========================================================*/
+        let usuarioEncontrado;
+        try {
+            const response = await fetch("http://localhost:8080/sketchcoffee/usuarios/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },//headers
+                body: JSON.stringify({
+                    correo: usuarioVal,
+                    passwordHash: contrasenaVal // Coincide exactamente con el Map que espera UsuarioController.java
+                })// JSON.stringify esto nos permite enviar un objeto JavaScript como JSON al backend
+            });//fetch
+
+            if (response.status === 200) {
+                usuarioEncontrado = await response.json();
+            } else if (response.status === 401 || response.status === 404 || response.status === 500) {
+
+                // Manejo de credenciales inválidas o error de autenticación
                 if (alertaGeneral) {
-                    alertaGeneral.className = "alert alert-danger"; // Restablece estilo de error rojo
+                    alertaGeneral.className = "alert alert-danger"; 
                     alertaGeneral.textContent = "Credenciales incorrectas. Verifica tus datos.";
                     alertaGeneral.classList.remove("d-none");
                     alertaGeneral.setAttribute("tabindex", "-1");
-                    alertaGeneral.focus(); // Foco alerta general de error
-
-                }// alertageneral
+                    alertaGeneral.focus();
+                }// Mostrar mensaje de error en la zona de alerta general
                 return;
-            }//if !
+            } else {
+                throw new Error("Error en la respuesta del servidor");
+            }//else
 
-            // Crear sesión activa y redirigir a la página de inicio
+        } catch (error) {
+            console.error("No se pudo conectar con el servidor:", error);
+            if (alertaGeneral) {
+                alertaGeneral.className = "alert alert-danger";
+                alertaGeneral.textContent = "No se pudo conectar con el servidor backend. Asegúrate de que esté encendido.";
+                alertaGeneral.classList.remove("d-none");
+            }//if alertaGeneral
+            return;
+        }//catch
+
+        // Si la autenticación es exitosa, guardar sesión y redirigir
+        if (usuarioEncontrado) {
             localStorage.setItem("app_authenticated_user", JSON.stringify(usuarioEncontrado));
-            if (usuarioEncontrado.rol === "administrador") {
+            
+            // Redirección según rol obtenido de la base de datos
+            if (usuarioEncontrado.rol && usuarioEncontrado.rol.toLowerCase() === "administrador") {
                 window.location.href = "creacion_de_producto.html";
             } else {
                 window.location.href = "index.html";
-            }
-        }//if
-    }); //formularioLogin
+            }//else usuarioEncontrado.rol
+        }//if usuarioEncontrado
+    }); // formularioLogin
 
-    // Función para mostrar error y actualizar atributos ARIA
+    // Funciones auxiliares de UI y Accesibilidad
     function mostrarErrorCampo(input, contenedorError, mensaje) {
         input.setAttribute("aria-invalid", "true");
         input.classList.add("is-invalid");
@@ -185,8 +173,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (contenedorError) {
             contenedorError.textContent = mensaje;
             contenedorError.classList.remove("d-none");
-        }//if
-    }// mostrarErrorCampo
+        }//if contenedorError
+    }//fuction mostrarErrorCampo
 
     function marcarCampoValido(input, contenedorError) {
         input.setAttribute("aria-invalid", "false");
@@ -195,8 +183,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (contenedorError) {
             contenedorError.textContent = "";
             contenedorError.classList.add("d-none");
-        }//if
-    }// marcarCampoValido
+        }//if contenedorError
+    }//function marcarCampoValido
 
     function limpiarEstadoValidacion(input, contenedorError) {
         input.removeAttribute("aria-invalid");
@@ -204,7 +192,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (contenedorError) {
             contenedorError.textContent = "";
             contenedorError.classList.add("d-none");
-        }// if
-    }//limpiarEstadoValidacion
+        }//if contenedorError
+    }//function limpiarEstadoValidacion
 
-}); // DOM
+}); // DOMContentLoaded
