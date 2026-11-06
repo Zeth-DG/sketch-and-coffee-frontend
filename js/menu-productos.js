@@ -18,80 +18,77 @@ const descripcionesBreves = {
 export async function cargarProductosCatalogo() {
   const productosCatalogo = [];
 
-  // 1. NUEVO: Cargar el JSON de productos extra (Cafés y Postres)
+  // 1. Cargar productos desde el Backend de Spring Boot (API REST / MySQL)
   try {
-    // Ajusta la ruta si guardaste el JSON en otra carpeta
-    const respuestaExtra = await fetch("../menu/JSON%20documentos/productos-extra.json");
-    if (respuestaExtra.ok) {
-      const productosExtra = await respuestaExtra.json();
-      productosCatalogo.push(...productosExtra);
+    // Ruta relativa: pasa por nginx en produccion (AWS) y funciona igual
+    // en local porque Spring Boot sirve el frontend en el mismo origen.
+    const response = await fetch("/sketchcoffee/productos", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (response.ok) {
+      const productosBackend = await response.json();
+
+      // Mapear la estructura del backend al formato que lee tu frontend y filtros
+      const productosMapeados = productosBackend.map(prod => {
+        const nombreLower = (prod.nombre || "").toLowerCase();
+
+        // Extraer de forma segura el nombre de la categoría del objeto anidado
+        const nombreCategoria = prod.categoria?.nombre || "General";
+
+        const claveEncontrada = Object.keys(descripcionesBreves).find(termino => nombreLower.includes(termino));
+        const infoExtra = claveEncontrada ? detallesPersonalizados[claveEncontrada] : null;
+
+        return {
+          id: prod.id,
+          nombre: prod.nombre || "Sin nombre",
+          departamento: nombreCategoria, // Utilizado por menu-filtros.js para categorizar
+          categoria: nombreCategoria,
+          precio: Number(prod.precio) || 0.00,
+          sku: prod.sku || `sku-${prod.id}`,
+          disponible: prod.activo ?? true, // Traduce el "activo" del backend a disponibilidad
+          existencias: prod.existencias || 0,
+          descripcion: prod.descripcion || infoExtra?.descripcion || descripcionesBreves[claveEncontrada] || "Una opción deliciosa para disfrutar en Sketch & Coffee.",
+          // La imagen de la base manda: asi las fotos reales subidas desde
+          // el panel de administracion se muestran aunque el nombre del
+          // producto coincida con una imagen hardcodeada. El fallback es
+          // un arte de marca que SI existe (./img/default.jpg nunca existó).
+          imagen: prod.imagen || (infoExtra ? infoExtra.imagen : "imagenes/cafeteria/Sketch&Coffee_cuadro1.png")
+        };
+      });
+
+      productosCatalogo.push(...productosMapeados);
+    } else {
+      console.warn("El servidor respondió con un estado no exitoso al obtener productos.");
     }
   } catch (error) {
-    console.warn("No se pudo cargar productos-extra.json:", error);
+    console.error("Error de red al conectar con el backend de Spring Boot para el catálogo:", error);
   }
 
-  // 2. Cargar el menú original (el de Bistrosoft)
-  try {
-    const response = await fetch("../menu/JSON%20documentos/menu.json");
-    if (!response.ok) throw new Error('No se pudo cargar el menú referencia');
-    
-    const rawData = await response.json();
-
-    const productosLimpios = Object.values(rawData.data).map(producto => ({
-      nombre: producto.name || "Sin nombre",
-      departamento: producto.department || "Sin departamento",
-      precio: producto.origins && producto.origins.length > 0 ? producto.origins[0].price : "0.00",
-      sku: producto.sku || "Sin sku", 
-      disponible: producto.isProductAvailable ?? false
-    }));
-
-    const palabrasClave = [
-      "croissant salado", "chai latte", "chocolate caliente", "tisana pink blossom",
-      "enchiladas", "chilaquiles", "capuchino", "americano", "latte frio", "latte caliente", "crepa"
-    ];
-
-    const productosFiltrados = productosLimpios.filter(prod => {
-      const nombreLower = prod.nombre.toLowerCase();
-      const deptoLower = prod.departamento.toLowerCase();
-      const esIngrediente = deptoLower.includes("ingrediente");
-      const coincideClave = palabrasClave.some(termino => nombreLower.includes(termino));
-      return coincideClave && !esIngrediente;
-    });
-
-    const productosDelMenu = productosFiltrados.map(prod => {
-      const claveEncontrada = palabrasClave.find(termino => prod.nombre.toLowerCase().includes(termino));
-      const infoExtra = claveEncontrada ? detallesPersonalizados[claveEncontrada] : null;
-
-      return {
-        ...prod,
-        descripcion: infoExtra?.descripcion || descripcionesBreves[claveEncontrada] || "Una opción deliciosa para disfrutar en Sketch & Coffee.",
-        imagen: infoExtra ? infoExtra.imagen : "./img/default.jpg"
-      };
-    });
-    productosCatalogo.push(...productosDelMenu);
-  } catch (error) {
-    console.error("No se pudo cargar el menú de referencia:", error);
-  }
-
-  // 3. Cargar los productos que el usuario agregue manualmente (LocalStorage)
+  // 2. Cargar los productos creados localmente (LocalStorage / Panel CRUD)
   try {
     const productosGuardados = JSON.parse(localStorage.getItem("productos_agregados") || "[]");
     const productosNuevos = productosGuardados.map(producto => ({
+      id: producto.id || `local-${Date.now()}`,
       nombre: producto.nombre,
-      departamento: producto.categoria,
-      categoria: producto.categoria,
-      precio: producto.precio,
+      departamento: producto.categoria || "General",
+      categoria: producto.categoria || "General",
+      precio: Number(producto.precio) || 0.00,
       sku: `local-${producto.id}`,
       disponible: true,
-      descripcion: producto.descripcion,
-      imagen: producto.imagen
+      existencias: 10,
+      descripcion: producto.descripcion || "Una opción deliciosa para disfrutar en Sketch & Coffee.",
+      imagen: producto.imagen || "./img/default.jpg"
     }));
 
     productosCatalogo.push(...productosNuevos);
   } catch (error) {
-    console.error("No se pudieron cargar los productos guardados:", error);
+    console.error("No se pudieron cargar los productos guardados en LocalStorage:", error);
   }
 
-  console.info(`Catálogo cargado con ${productosCatalogo.length} productos.`);
+  console.info(`Catálogo cargado exitosamente con ${productosCatalogo.length} productos.`);
   return productosCatalogo;
 }
