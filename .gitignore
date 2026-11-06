@@ -7,6 +7,7 @@ dist/
 # Archivos de prueba o temporales 
 js/menu/
 menu-pruebas.html
+GUION-EXPOSICION.txt
 
 # Archivos del sistema operativo
 .DS_Store

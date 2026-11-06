@@ -1,0 +1,471 @@
+==============================================================================
+SKETCH & COFFEE — GUION DE EXPOSICIÓN
+Equipo: 7 tazas un código
+Duración total: 10:00
+Expositores: 7 (Laura, Gonzalo, Lizeth, Alexandra, Vanya, Luis, Manuel)
+==============================================================================
+
+IDEA QUE DEBE QUEDAR AL FINAL
+------------------------------------------------------------------------------
+"El recorrido del usuario ya funciona en el navegador: catálogo, detalle,
+carrito, registro y login con almacenamiento local. El modelo relacional está
+probado y la API de usuarios ya responde desde MySQL. Lo que sigue es conectar
+catálogo, carrito y pedidos a esa API."
+
+REGLA PARA TODO EL EQUIPO
+------------------------------------------------------------------------------
+Una sola idea por bloque. Cada quien dice qué funciona hoy y qué sigue, sin
+adelantar el bloque del compañero. No se afirma que el catálogo o el carrito
+ya escriban en MySQL.
+
+
+HOJA DE TIEMPOS (para el cronometrador)
+------------------------------------------------------------------------------
+  0:00 - 0:50   Laura      Apertura y arquitectura
+  0:50 - 1:00   ---------  Transición
+  1:00 - 2:15   Gonzalo    Catálogo y productos
+  2:15 - 2:25   ---------  Transición
+  2:25 - 3:40   Lizeth     Menú interactivo y formularios
+  3:40 - 3:50   ---------  Transición
+  3:50 - 5:20   Alexandra  Detalle del producto y base de datos
+  5:20 - 5:30   ---------  Transición
+  5:30 - 6:30   Vanya      Registro, login, entidad y repositorio
+  6:30 - 6:40   ---------  Transición
+  6:40 - 7:50   Luis       API y prueba con Postman
+  7:50 - 8:00   ---------  Transición
+  8:00 - 9:30   Manuel     Integración y cierre
+  9:30 - 10:00  ---------  Preguntas
+
+Ajuste de tiempos: se tomaron 5 s de Laura y 10 s de Gonzalo para dar 90 s al
+bloque de Alexandra, que ahora incluye el detalle del producto y MySQL. El
+resto conserva el orden y la estructura original.
+
+Señales acordadas: aviso a los 30 s y a los 10 s del final de cada bloque.
+Quien termina antes de tiempo no agrega contenido: espera su señal y pasa la
+palabra con la transición acordada.
+
+
+==============================================================================
+1. APERTURA Y ARQUITECTURA — LAURA
+0:00 - 0:50
+==============================================================================
+
+PANTALLA
+  Página de inicio. Recorrido lento, de una sola pasada.
+  Después, cambiar al esquema: frontend -> API Java -> MySQL.
+
+ACCIÓN
+  Bajar hasta "Productos estrella", señalar una tarjeta y cambiar al esquema.
+  No narrar cada sección de la página.
+
+DECIR
+  "Hola, somos el equipo de Sketch & Coffee. En los próximos diez minutos van a
+  ver el recorrido del usuario y el estado real del backend. La arquitectura es
+  esta: el navegador muestra la interfaz, una API en Java con Spring Boot
+  atiende las peticiones, y MySQL guarda los datos.
+
+  Hoy funciona el recorrido del usuario en el frontend y la API de usuarios
+  leyendo desde MySQL. Lo que sigue es conectar el catálogo, el carrito y los
+  pedidos a esa API. Mostramos las dos partes por separado para que quede claro
+  qué está probado y qué es siguiente etapa."
+
+TRANSICIÓN
+  "Gonzalo les muestra cómo se descubre el menú."
+
+NO DECIR
+  No prometer que la compra ya está integrada de punta a punta.
+
+
+==============================================================================
+2. CATÁLOGO Y PRODUCTOS — GONZALO
+1:00 - 2:15
+==============================================================================
+
+PANTALLA
+  menu.html
+
+ACCIÓN (en este orden, sin improvisar)
+  1. Filtrar por la categoría "Bebidas".
+  2. Ordenar por menor precio.
+  3. Cambiar a la página 2.
+  4. Añadir un producto al carrito.
+  5. Abrir el carrito y mostrar el contador.
+
+NO HACER
+  No abrir el detalle del producto desde las tarjetas del catálogo: no tienen
+  enlace. Alexandra lo abre después desde "Ver todos" en la página de inicio.
+
+DECIR
+  "Este es el catálogo. La información viene de archivos JSON: el menú original
+  trae 140 productos y los consolidamos en 56 dentro de cinco categorías, con
+  imagen, precio y disponibilidad. El usuario puede filtrar por categoría, por
+  rango de precio y por características del café, ordenar por precio y navegar
+  de nueve en nueve.
+
+  Vamos a filtrar por bebidas, ordenar por menor precio y agregar uno al
+  carrito. El carrito vive en localStorage: sobrevive si recargas la página,
+  pero no es un pedido en MySQL. El catálogo todavía no consulta la API de
+  productos; esa conexión es la siguiente etapa."
+
+TRANSICIÓN
+  "Ahora veamos la personalización y los formularios."
+
+NO DECIR
+  No decir "los productos vienen de la base de datos". Vienen de JSON.
+
+
+==============================================================================
+3. MENÚ INTERACTIVO Y FORMULARIOS — LIZETH
+2:25 - 3:40
+==============================================================================
+
+PANTALLA
+  menu-interactivo.html y después contacto.html
+
+ACCIÓN
+  1. Bebidas -> Frías -> Con café.
+  2. Agregar un producto al carrito.
+  3. Abrir el carrito.
+  4. En contacto, escribir un correo inválido y mostrar el mensaje de error.
+  5. NO enviar el formulario: EmailJS depende de internet.
+
+DECIR
+  "Además del catálogo, tenemos un menú interactivo que guía al usuario por
+  pasos: primero frío o caliente, luego con café o sin café, y al final los
+  productos que coinciden. Es la misma información, presentada como una
+  conversación en vez de una lista.
+
+  El carrito es el mismo del catálogo: se guarda en localStorage y se comparte
+  entre páginas, pero no genera un pedido en la base. En los formularios
+  validamos correo, nombre, teléfono, asunto y mensaje; para esas reglas tenemos
+  59 pruebas unitarias con Jest, todas aprobadas. El formulario de contacto
+  además envía con EmailJS. Todo esto es frontend: valida y guarda en el
+  navegador, pero todavía no escribe en MySQL."
+
+TRANSICIÓN
+  "Alexandra les muestra el detalle del producto y cómo organizamos la
+  información en MySQL."
+
+NO DECIR
+  No afirmar que el formulario crea usuarios en la base.
+
+
+==============================================================================
+4. DETALLE DEL PRODUCTO Y BASE DE DATOS — ALEXANDRA
+3:50 - 5:20
+==============================================================================
+
+PANTALLA
+  detalles_del_producto.html, después el diagrama ER y finalmente MySQL
+  Workbench.
+
+ACCIÓN
+  1. Abrir el detalle desde "Ver todos" en la página de inicio o por URL
+     directa. Hacer clic en una miniatura, cambiar molienda y tamaño, abrir la
+     pestaña "Notas de cata" y bajar al carrusel.
+  2. Hacer clic en "Agregar al carrito" y señalar el contador.
+  3. Cambiar al diagrama ER y señalar las cinco entidades y las cuatro
+     relaciones.
+  4. En Workbench, ejecutar SOLO el conteo de filas (5 por tabla).
+  5. Ejecutar el INNER JOIN de pedidos, usuarios y productos.
+  6. Ejecutar la validación de totales (debe salir OK).
+
+NUNCA
+  No ejecutar el script completo en vivo: empieza con DROP DATABASE.
+
+DECIR
+  "Continuando con la experiencia de usuario, esta es la página de detalles del
+  producto. Aquí el cliente conoce cada artículo antes de comprar: una galería
+  con imagen principal y miniaturas, información clave con nombre, calificación
+  y precio, y selectores dinámicos de molienda y tamaño. Abajo, pestañas para
+  descripción, notas de cata, preparación y envíos, y un carrusel que invita a
+  seguir comprando. Al elegir sus preferencias, simplemente agrega al carrito.
+
+  Pasemos a cómo organizamos esta información en MySQL. Diseñamos cinco tablas:
+  categorías, usuarios, productos, pedidos y detalles_pedido. Las categorías
+  organizan el catálogo; cada producto pertenece a una categoría; cada pedido se
+  relaciona con un usuario; y los detalles guardan producto, cantidad y precio.
+  El script incluye claves foráneas y restricciones para evitar, por ejemplo,
+  precios negativos, existencias negativas o SKU duplicados. Cargamos cinco
+  registros por tabla y consultas de verificación: conteo, INNER JOIN y
+  validación de totales. Una advertencia importante: el script elimina y vuelve
+  a crear la base sketch_coffee al inicio, así que solo debe ejecutarse en una
+  base de demostración, nunca sobre datos que se quieran conservar."
+
+TRANSICIÓN
+  "Vanya explica cómo se registran los usuarios y cómo se representan en Java."
+
+NO DECIR
+  No decir que el detalle se abre desde las tarjetas del catálogo. Se abre
+  desde "Ver todos" en inicio o por URL directa.
+
+
+==============================================================================
+5. REGISTRO, LOGIN, ENTIDAD Y REPOSITORIO — VANYA
+5:30 - 6:30
+==============================================================================
+
+PANTALLA
+  registro.html, inicio-sesion.html y después IntelliJ: Usuario.java y
+  UsuarioRepository.java.
+
+ACCIÓN
+  1. En registro, escribir un teléfono incompleto y mostrar el error; completar
+     con 2011001100 y mostrar que es válido. No enviar el formulario.
+  2. En inicio de sesión, señalar que acepta usuarios y administradores y que
+     cada rol tiene opciones distintas. No iniciar sesión: solo mostrar el
+     formulario y mencionar los roles.
+  3. En IntelliJ, mostrar Usuario.java y UsuarioRepository.java. Treinta
+     segundos, no más.
+
+GUION INTERNO (1 minuto)
+  0:00 - 0:25  Registro e inicio de sesión
+  0:25 - 0:30  Transición al backend
+  0:30 - 0:55  Usuario y repositorio
+  0:55 - 1:00  Cierre y paso a Luis
+
+DECIR
+  "En el registro están nombre, apellido, teléfono, correo, contraseña y
+  confirmación; los datos se validan mientras escribimos. Un teléfono
+  incompleto muestra un error, y 2011001100 es válido. Los usuarios se guardan
+  en localStorage y la contraseña se guarda como hash SHA-256. Desde el inicio
+  de sesión pueden entrar usuarios y administradores, con opciones según su rol.
+
+  Ahora pasamos al backend, donde se representan y gestionan los usuarios desde
+  Java. Usuario representa la tabla usuarios e incluye nombre, apellido,
+  teléfono, correo, rol, estado y password_hash. JPA conecta la clase con la
+  tabla y UsuarioRepository, al extender JpaRepository, facilita consultar,
+  guardar, actualizar y eliminar usuarios sin escribirlas.
+
+  Es la primera entidad del backend. El backend ya incluye también la entidad
+  Pedido y su repositorio; faltan Categoría, Producto y DetallePedido."
+
+TRANSICIÓN
+  "Luis les enseña cómo probar la API."
+
+NO DECIR
+  No decir que el registro permite elegir "administrador": el rol se asigna
+  según la cuenta. Las cuentas administradoras son cuentas de demostración ya
+  preparadas.
+
+
+==============================================================================
+6. API Y PRUEBA CON POSTMAN — LUIS
+6:40 - 7:50
+==============================================================================
+
+PANTALLA
+  IntelliJ con la aplicación corriendo. Después Postman.
+
+ACCIÓN
+  1. Mostrar la consola con el mensaje "Started".
+  2. GET http://localhost:8080/sketchcoffee/usuarios
+  3. Señalar el 200 OK y el arreglo JSON.
+  4. Opcional, solo si sobra tiempo: GET por identificador.
+
+DECIR
+  "El controlador publica la ruta /sketchcoffee/usuarios y define las
+  operaciones para listar, consultar por id, crear, actualizar y eliminar. La
+  aplicación está corriendo en IntelliJ contra la base de MySQL; la conexión
+  apunta a sketch_coffee y Hibernate valida el esquema con ddl-auto=validate.
+  Desde Postman hacemos el GET del listado.
+
+  La respuesta es 200 OK con los usuarios que vienen de la base, no de datos
+  quemados. Esta prueba confirma ese recorrido completo para usuarios. No
+  significa que el frontend ya consuma estos endpoints, ni que el carrito guarde
+  pedidos: primero probamos la API por partes y después la conectamos."
+
+TRANSICIÓN
+  "Manuel cierra con la integración y los siguientes pasos."
+
+NO DECIR
+  No afirmar que el catálogo ya consume esta API.
+
+
+==============================================================================
+7. INTEGRACIÓN Y CIERRE — MANUEL
+8:00 - 9:30
+==============================================================================
+
+PANTALLA
+  Relaciones pedidos <-> detalles_pedido. Después, de regreso al esquema de
+  arquitectura.
+
+ACCIÓN
+  Señalar la relación, volver al esquema y quedarse ahí durante el cierre.
+
+DECIR
+  "Volvamos al esquema. El modelo ya sabe representar una compra: un pedido con
+  varios detalles, cada detalle con su producto y su precio. En el backend ya
+  existen Usuario y Pedido; lo que falta es el puente: que el carrito del
+  navegador llame a la API y que esa API escriba en pedidos y detalles_pedido.
+  También faltan Categoría, Producto y DetallePedido.
+
+  Para lograrlo de forma ordenada trabajamos con ramas individuales, usamos
+  develop para integrar cambios mediante Pull Requests y mantenemos main
+  protegida hasta la entrega final.
+
+  En resumen: pasamos del diseño a la estructura, y de la estructura a la
+  realidad. Hoy Sketch & Coffee tiene una interfaz sólida, un modelo relacional
+  probado y un backend en Java que ya responde. El recorrido del usuario
+  funciona en el navegador, el modelo está validado con datos y la API de
+  usuarios lee desde MySQL. Lo siguiente es integrar catálogo, carrito y
+  pedidos. La base está construida y el siguiente nivel ya tiene ruta.
+
+  De parte de todo el equipo, gracias por su atención."
+
+CIERRE
+  9:30 - 10:00. Silencio para preguntas. No agregar contenido nuevo.
+
+
+==============================================================================
+PREPARACIÓN TÉCNICA (antes de entrar)
+==============================================================================
+
+[ ] Un solo navegador con pestañas en orden fijo:
+    inicio, menú, menú interactivo, contacto, detalle, registro, inicio de
+    sesión.
+[ ] Zoom al 110%. Barra de marcadores oculta. Notificaciones apagadas.
+[ ] Live Server corriendo en el puerto 5501 (.vscode/settings.json).
+[ ] Recarga forzada (Ctrl + F5) antes de empezar.
+[ ] La API debe estar arriba ANTES de la exposición, no al momento de la demo.
+[ ] Credenciales de MySQL configuradas en el backend.
+[ ] GET de Postman ya ejecutado en una pestaña, por si falla en vivo.
+[ ] Capturas de respaldo disponibles en back-end/docs:
+    Usuarios_Postman_Pruebas.png y Usuarios_MySQL_Pruebas.png.
+[ ] MySQL Workbench con la base sketch_coffee ya creada. En vivo solo SELECTs.
+[ ] IntelliJ con Usuario.java, UsuarioRepository.java, Pedido.java y
+    UsuarioController.java abiertos, y la aplicación ya iniciada.
+[ ] Verificar la cuenta de demostración de usuario y la de administrador.
+[ ] Esperar un segundo después de cargar el menú y el detalle antes de hacer
+    clic en "Añadir": el carrito lo inyecta js/header.js de forma asíncrona y el
+    botón no responde si se hace clic demasiado pronto.
+[ ] Cronometrador designado con señales a 30 s y 10 s.
+[ ] Ensayo completo al menos una vez, con relevos incluidos.
+
+
+==============================================================================
+NOTAS SOBRE EL BACKEND
+==============================================================================
+
+- El backend Java vive en un repositorio aparte:
+  https://github.com/Zeth-DG/sketch-and-coffee-backend
+- Archivos que se muestran: Usuario.java, UsuarioRepository.java, Pedido.java y
+  UsuarioController.java.
+- La aplicación corre en el puerto 8080 y expone /sketchcoffee/usuarios.
+- Evidencias de respaldo en back-end/docs:
+  Usuarios_Intellij_CorrePrograma_Pruebas.png, Usuarios_MySQL_Pruebas.png y
+  Usuarios_Postman_Pruebas.png.
+- No mostrar creacion_de_producto.html salvo que sobre tiempo: requiere sesión
+  de administrador y no forma parte del recorrido principal.
+
+
+==============================================================================
+RIESGOS Y PLAN B
+==============================================================================
+
+RIESGO: Ejecutar el script SQL completo borra la base.
+SEÑAL:  La primera sentencia es DROP DATABASE.
+PLAN B: Solo SELECTs. El DROP se menciona, no se ejecuta.
+
+RIESGO: La API no está corriendo.
+SEÑAL:  Postman da error de conexión.
+PLAN B: Mostrar la respuesta guardada y decir que ya estaba registrada.
+
+RIESGO: EmailJS sin internet.
+SEÑAL:  El envío se queda cargando.
+PLAN B: Nunca enviar. Solo mostrar la validación.
+
+RIESGO: Se les va el tiempo.
+SEÑAL:  Minuto 4:00 y no empezó MySQL.
+PLAN B: Saltar el formulario de Lizeth y el INNER JOIN; usar el cierre corto
+         de Manuel del anexo.
+
+RIESGO: El detalle no se abre desde las tarjetas del catálogo.
+SEÑAL:  No hay enlace en las tarjetas.
+PLAN B: Abrirlo desde "Ver todos" en inicio o por URL directa. No detenerse a
+         explicar por qué no está enlazado.
+
+
+==============================================================================
+RECORTES DE EMERGENCIA (en este orden)
+==============================================================================
+
+1. El recorrido de inicio en la apertura (10 s).
+2. La página 2 del catálogo (5 s).
+3. El formulario de contacto, dejando solo la mención de las 59 pruebas (30 s).
+4. La explicación de JpaRepository (25 s).
+5. El carrusel del detalle del producto (10 s).
+6. El flujo de Git en el cierre (15 s).
+
+
+==============================================================================
+ANEXO — VERSIONES ALTERNAS
+==============================================================================
+
+CIERRE CORTO DE MANUEL (40 s, si van retrasados)
+  "El modelo ya sabe representar una compra: un pedido con varios detalles.
+  En el backend ya están Usuario y Pedido; lo que falta es el puente entre el
+  carrito del navegador y la API. Hoy el recorrido del usuario funciona, el
+  modelo está probado y la API de usuarios responde desde MySQL. Lo siguiente
+  es integrar catálogo, carrito y pedidos. Gracias."
+
+APERTURA CORTA DE LAURA (30 s, si van retrasados)
+  "Hola, somos Sketch & Coffee. Esta es la arquitectura: navegador, API en Java
+  con Spring Boot y MySQL. Hoy funciona el recorrido del usuario en el frontend
+  y la API de usuarios leyendo de la base; conectar catálogo y carrito es la
+  siguiente etapa. Gonzalo les muestra el menú."
+
+BLOQUE CORTO DE ALEXANDRA (50 s, si van retrasados)
+  Mostrar solo el detalle del producto y, en Workbench, el conteo de filas.
+  Decir: "El detalle permite conocer el producto antes de comprar; en MySQL,
+  cinco tablas con claves foráneas y restricciones guardan catálogo, usuarios y
+  pedidos. El script se ejecuta solo en una base de demostración." Pasar a
+  Vanya.
+
+
+==============================================================================
+CHECKLIST POR EXPOSITOR
+==============================================================================
+
+LAURA
+  [ ] Abrir index y el esquema antes de empezar.
+  [ ] Recorrido de una sola pasada; no narrar cada sección.
+  [ ] Cerrar con la idea de "dos partes: frontend y API".
+
+GONZALO
+  [ ] Menú cargado y con un segundo de espera antes de "Añadir".
+  [ ] Cinco acciones en orden.
+  [ ] No abrir el detalle desde las tarjetas del catálogo.
+
+LIZETH
+  [ ] Menú interactivo probado antes del ensayo.
+  [ ] Correo inválido visible, sin enviar el formulario.
+  [ ] Mencionar Jest una sola vez.
+
+ALEXANDRA
+  [ ] Detalle abierto desde "Ver todos" o URL directa.
+  [ ] Diagrama ER visible y Workbench conectado.
+  [ ] Solo conteo, INNER JOIN y validación de totales.
+  [ ] No ejecutar DROP DATABASE.
+
+VANYA
+  [ ] Registro con el error de teléfono y el valor 2011001100.
+  [ ] Cuenta de usuario y cuenta de administrador verificadas.
+  [ ] Usuario.java y UsuarioRepository.java abiertos.
+  [ ] No pasar de 30 segundos mostrando código.
+
+LUIS
+  [ ] API iniciada antes de la exposición.
+  [ ] GET ejecutado y respuesta guardada como respaldo.
+  [ ] Aclarar que el frontend aún no consume la API.
+
+MANUEL
+  [ ] Volver al esquema y quedarse ahí.
+  [ ] Cierre de 90 segundos; no agregar contenido nuevo.
+  [ ] Dar paso a preguntas sin llenar el silencio.
+
+
+==============================================================================
+FIN DEL GUION
+==============================================================================
